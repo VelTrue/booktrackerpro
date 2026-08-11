@@ -1,0 +1,428 @@
+
+@import "tailwindcss";
+
+:root {
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --surface: #ffffff;
+  --status-completed: #10b981;
+  --status-reading: #3b82f6;
+  --status-planned: #9ca3af;
+  --status-abandoned: #f43f5e;
+}
+
+body.dark {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --surface: #1e293b;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.dark .bg-white { background: var(--card-bg); }
+body.dark .bg-slate-50 { background: #1e293b; }
+body.dark .bg-slate-100 { background: #0f172a; }
+body.dark .border-slate-200,
+body.dark .border-slate-100,
+body.dark .border-slate-300 { border-color: var(--card-border); }
+body.dark .text-slate-900 { color: var(--text); }
+body.dark .text-slate-700 { color: #e2e8f0; }
+body.dark .text-slate-600,
+body.dark .text-slate-500,
+body.dark .text-slate-400 { color: var(--text-secondary); }
+body.dark .text-slate-300 { color: #64748b; }
+body.dark .bg-black\/40 { background: rgba(0, 0, 0, 0.6); }
+body.dark .bg-black\/70 { background: rgba(0, 0, 0, 0.75); }
+body.dark input,
+body.dark textarea,
+body.dark select {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--card-border);
+}
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+  color: #64748b;
+}
+body.dark .modal-enter,
+body.dark .rounded-2xl {
+  background: var(--card-bg);
+}
+body.dark .status-oval { color: white; }
+body.dark .timer-display { color: var(--text); }
+body.dark .text-slate-900 { color: var(--text); }
+
+
+/* Анимации для карточек */
+.dash-card { 
+  background: white; 
+  border-radius: 16px; 
+  border: 1px solid #e5e7eb; 
+  position: relative; 
+  overflow: hidden; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0; 
+  transform: translateY(12px); 
+  animation: cardSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.dash-card:nth-child(1) { animation-delay: 0s; }
+.dash-card:nth-child(2) { animation-delay: 0.06s; }
+.dash-card:nth-child(3) { animation-delay: 0.12s; }
+.dash-card:nth-child(4) { animation-delay: 0.18s; }
+.dash-card:nth-child(5) { animation-delay: 0.24s; }
+@keyframes cardSlideIn { to { opacity: 1; transform: translateY(0); } }
+.dash-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
+.dash-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; transition: height 0.3s ease; }
+.dash-card:hover::before { height: 4px; }
+.dash-card.total::before { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+.dash-card.completed::before { background: linear-gradient(90deg, var(--status-completed), var(--status-completed)); }
+.dash-card.reading::before { background: linear-gradient(90deg, var(--status-reading), var(--status-reading)); }
+.dash-card.planned::before { background: linear-gradient(90deg, var(--status-planned), var(--status-planned)); }
+.dash-card.abandoned::before { background: linear-gradient(90deg, var(--status-abandoned), var(--status-abandoned)); }
+
+/* Книжная карточка */
+.book-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+.book-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+
+/* Анимация модалки */
+.modal-enter { animation: modalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+/* Статусы */
+.status-oval { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 500; color: white; }
+.status-completed { background: var(--status-completed); }
+.status-reading { background: var(--status-reading); }
+.status-planned { background: var(--status-planned); }
+.status-abandoned { background: var(--status-abandoned); }
+
+/* Звезды */
+.star { cursor: pointer; transition: all 0.15s; }
+.star:hover { transform: scale(1.2); }
+.star-filled { color: #fbbf24; }
+.star-empty { color: #d1d5db; }
+
+/* Обрезка комментария */
+.comment-truncate { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Fade In */
+.fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Ошибка ввода */
+.input-error { border-color: #f87171 !important; background: #fef2f2 !important; }
+
+/* Дропдаун */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  min-width: 220px;
+  white-space: nowrap;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-top: 4px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  z-index: 20;
+  overflow: hidden;
+}
+.dropdown-menu.open {
+  display: block;
+  animation: dropdownIn 0.15s ease;
+}
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.dropdown-item:hover { background: #f3f4f6; }
+.dropdown-item.active { background: #eef2ff; color: #4f46e5; font-weight: 500; }
+
+/* Контейнер круговой диаграммы */
+.pie-chart-container { position: relative; }
+.pie-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* Анимация сегментов круговой диаграммы */
+@keyframes pieGrow {
+  from { stroke-dasharray: 0 1000; }
+}
+.pie-segment { animation: pieGrow 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+/* Уведомление (toast) */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.toast-icon {
+  width: 20px;
+  height: 20px;
+  background: #f43f5e;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Таймер */
+.timer-display {
+  font-size: 42px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  color: #1e293b;
+  transition: color 0.3s ease;
+}
+.timer-display.running { color: #10b981; }
+.timer-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+}
+.timer-btn:hover { transform: scale(1.08); }
+.timer-btn:active { transform: scale(0.95); }
+.timer-play {
+  background: #10b981;
+  color: white;
+  box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+}
+.timer-pause {
+  background: #f59e0b;
+  color: white;
+  box-shadow: 0 4px 15px rgba(245,158,11,0.3);
+}
+.timer-stop {
+  background: #f43f5e;
+  color: white;
+  box-shadow: 0 4px 15px rgba(244,63,94,0.3);
+}
+
+/* График времени */
+.time-bar-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 160px;
+  padding-bottom: 32px;
+  position: relative;
+}
+.time-bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.time-bar {
+  width: 100%;
+  max-width: 40px;
+  border-radius: 8px 8px 4px 4px;
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+  min-height: 4px;
+  position: relative;
+}
+.time-bar-wrapper:hover .time-bar { filter: brightness(1.1); }
+.time-bar-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  position: absolute;
+  bottom: -24px;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.time-bar-value {
+  font-size: 10px;
+  color: #94a3b8;
+  position: absolute;
+  top: -18px;
+  white-space: nowrap;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s ease;
+}
+.time-bar-wrapper:hover .time-bar-value {
+  opacity: 1;
+  transform: translateY(0);
+  color: #475569;
+}
+.time-bar-wrapper:hover .time-bar-label { color: #334155; }
+.time-tab {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+}
+.time-tab:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+.time-tab.active {
+  background: #1e293b;
+  color: white;
+  box-shadow: 0 2px 8px rgba(30,41,59,0.2);
+}
+
+/* Анимация чисел */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stat-number {
+  display: inline-block;
+  animation: countUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Кнопки пагинации (квадратные) */
+.square-btn {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  background: white;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.square-btn:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+.square-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.square-btn.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
+
+/* Dark theme: dashboard cards */
+body.dark .dash-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+body.dark .dash-card .stat-number {
+  color: #ffffff;
+}
+body.dark .dash-card p {
+  color: #cbd5e1;
+}
+body.dark .dash-card .text-slate-900 {
+  color: #ffffff;
+}
+
+/* Dark theme: pie chart center */
+body.dark .pie-center .text-slate-900 { color: #ffffff; }
+body.dark .pie-center .text-slate-400 { color: #cbd5e1; }
+
+/* Пользовательская тема: значения --bg/--card-bg/--card-border/--text/--text-secondary/--accent
+   выставляются из App.tsx на основе выбора пользователя в настройках */
+body.custom-theme .bg-white,
+body.custom-theme .bg-slate-50,
+body.custom-theme .bg-slate-100 { background: var(--card-bg); }
+body.custom-theme .border-slate-200,
+body.custom-theme .border-slate-100,
+body.custom-theme .border-slate-300 { border-color: var(--card-border); }
+body.custom-theme .text-slate-900,
+body.custom-theme .text-slate-700 { color: var(--text); }
+body.custom-theme .text-slate-600,
+body.custom-theme .text-slate-500,
+body.custom-theme .text-slate-400 { color: var(--text-secondary); }
+body.custom-theme .bg-black\/40 { background: rgba(0, 0, 0, 0.45); }
+body.custom-theme .bg-black\/70 { background: rgba(0, 0, 0, 0.7); }
+body.custom-theme input,
+body.custom-theme textarea,
+body.custom-theme select {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--card-border);
+}
+body.custom-theme .modal-enter,
+body.custom-theme .rounded-2xl {
+  background: var(--card-bg);
+}
+body.custom-theme .dash-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+}
+body.custom-theme .stat-number,
+body.custom-theme .timer-display,
+body.custom-theme .pie-center .text-slate-900 {
+  color: var(--text);
+}
+body.custom-theme .pie-center .text-slate-400 { color: var(--text-secondary); }
+
+/* Кнопки, следующие за пользовательским акцентным цветом (не затрагивает семантические
+   кнопки таймера и статус-бейджи, у них своя цветовая логика) */
+body.custom-theme .btn-primary {
+  background: var(--accent, #0f172a);
+  border-color: var(--accent, #0f172a);
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--accent, #0f172a) 45%, transparent);
+}
+body.custom-theme .btn-primary:hover { filter: brightness(0.92); }
