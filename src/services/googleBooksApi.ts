@@ -11,9 +11,45 @@ export class BookSearchError extends Error {}
 const ENDPOINT = 'https://www.googleapis.com/books/v1/volumes'
 const MAX_CANDIDATES = 3
 const TIMEOUT_MS = 8000
+const CACHE_KEY = 'bookTracker_googleBooksCache'
+const CACHE_LIMIT = 300
 
 function upgradeToHttps(url: string): string {
   return url.replace(/^http:\/\//, 'https://')
+}
+
+// Простой FIFO-кэш результатов поиска в localStorage.
+// Ограничен по размеру (CACHE_LIMIT), старые записи вытесняются.
+function loadCache(): Record<string, BookCandidate[]> {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (!raw) return {}
+    return JSON.parse(raw) as Record<string, BookCandidate[]>
+  } catch {
+    return {}
+  }
+}
+
+function saveCacheEntry(key: string, value: BookCandidate[]): void {
+  const cache = loadCache()
+  cache[key] = value
+  const keys = Object.keys(cache)
+  if (keys.length > CACHE_LIMIT) {
+    // Вытесняем самые старые записи
+    const toRemove = keys.length - CACHE_LIMIT
+    for (let i = 0; i < toRemove; i++) {
+      delete cache[keys[i]]
+    }
+  }
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache))
+  } catch {
+    // localStorage может быть переполнен — просто пропускаем
+  }
+}
+
+function normalizeTitleForCache(s: string): string {
+  return s.trim().toLowerCase()
 }
 
 interface GoogleBooksItem {
@@ -44,6 +80,12 @@ export async function searchBookMetadata(
   // Свободный текстовый запрос (а не intitle:/inauthor:) находит переводные
   // издания надёжнее, чем строгий поиск по конкретному полю.
   const searchText = author?.trim() ? `${titleQuery} ${author.trim()}` : titleQuery
+  const cacheKey = `${normalizeTitleForCache(titleQuery)}::${(author ?? '').trim().toLowerCase()}`
+  const cached = loadCache()[cacheKey]
+  if (cached?.length) {
+    return cached
+  }
+
   const params = new URLSearchParams({
     q: searchText,
     maxResults: '8',
@@ -66,6 +108,9 @@ export async function searchBookMetadata(
   }
 
   if (res.status === 429) {
+    if (cached?.length) {
+      return cached
+    }
     throw new BookSearchError('Слишком много запросов. Попробуйте позже')
   }
   if (!res.ok) {
@@ -96,5 +141,10 @@ export async function searchBookMetadata(
 
   const withCoverOnly = candidates.filter((c) => c.coverUrl)
   const pool = withCoverOnly.length > 0 ? withCoverOnly : candidates
-  return pool.slice(0, MAX_CANDIDATES)
+  const result = pool.slice(0, MAX_CANDIDATES)
+  if (result.length > 0) {
+    saveCacheEntry(cacheKey, result)
+  }
+  return result
 }
+

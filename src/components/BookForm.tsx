@@ -5,6 +5,7 @@ import { GENRES } from '../constants/genres'
 import { ImageCropper } from './ImageCropper'
 import { searchBookMetadata, BookSearchError, type BookCandidate } from '../services/googleBooksApi'
 import { mapCategoriesToGenres } from '../utils/genreMapping'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 
 interface BookFormProps {
   isOpen: boolean
@@ -79,6 +80,8 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
   useEffect(() => {
     return () => searchAbortRef.current?.abort()
   }, [])
+
+  useBodyScrollLock(isOpen)
 
   function handleCoverSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]

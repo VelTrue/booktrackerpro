@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import type { Book } from '../types'
 import { GENRES, type Genre } from '../constants/genres'
 import { BookCard } from './BookCard'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 
 interface BookBrowserProps {
   books: Book[]
@@ -37,6 +38,7 @@ const ratingOptions: { value: RatingFilter; label: string }[] = [
 ]
 
 export function BookBrowser({ books, onClose, onDelete, onEdit }: BookBrowserProps) {
+  useBodyScrollLock(true)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('all')
   const [genreFilter, setGenreFilter] = useState<GenreFilter>('all')

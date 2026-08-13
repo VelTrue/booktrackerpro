@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSettingsStore, type CustomTheme, type CustomThemeKey, type StatusKey, type Theme } from '../store/settingsStore'
 import { ColorPicker } from './ColorPicker'
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -87,6 +88,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   useEffect(() => {
     if (isOpen) setModalPos(null)
   }, [isOpen])
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

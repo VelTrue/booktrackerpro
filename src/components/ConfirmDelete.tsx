@@ -1,3 +1,5 @@
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock'
+
 interface ConfirmDeleteProps {
   isOpen: boolean
   onConfirm: () => void
@@ -5,6 +7,7 @@ interface ConfirmDeleteProps {
 }
 
 export function ConfirmDelete({ isOpen, onConfirm, onCancel }: ConfirmDeleteProps) {
+  useBodyScrollLock(isOpen)
   if (!isOpen) return null
 
   return (

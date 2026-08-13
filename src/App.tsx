@@ -13,6 +13,7 @@ import { Timer } from './components/Timer'
 import { TimeChart } from './components/TimeChart'
 import { ConfirmDelete } from './components/ConfirmDelete'
 import { getDerivedTheme } from './utils/colorUtils'
+import { useBodyScrollLock } from './hooks/useBodyScrollLock'
 
 function App() {
   const { books, addBook, removeBook, updateBook, mergeBooks } = useBookStore()
@@ -30,6 +31,10 @@ function App() {
   const [timerDragging, setTimerDragging] = useState(false)
   const timerDragOffset = useRef({ dx: 0, dy: 0 })
   const timerRef = useRef<HTMLDivElement>(null)
+
+  // Блокируем прокрутку фона, пока открыто любое верхнее/боковое окно.
+  // (SettingsModal, BookForm, ConfirmDelete и BookBrowser блокируют сами себя.)
+  useBodyScrollLock(isTimerOpen || isDataOpen || isSidebarOpen)
 
   // Пока открыто окно настроек, эти хуки отдают черновые значения предпросмотра,
   // а не сохранённые в сторе, до нажатия "Сохранить"
