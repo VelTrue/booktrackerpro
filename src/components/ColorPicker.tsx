@@ -9,11 +9,11 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ value, onChange, palette, disabledColors = [] }: ColorPickerProps) {
-  const [hexInput, setHexInput] = useState(value)
+  const [hexInput, setHexInput] = useState(value ?? '')
   const [hexError, setHexError] = useState(false)
 
   useEffect(() => {
-    setHexInput(value)
+    setHexInput(value ?? '')
     setHexError(false)
   }, [value])
 
@@ -44,7 +44,7 @@ export function ColorPicker({ value, onChange, palette, disabledColors = [] }: C
               title={taken ? 'Цвет уже используется' : color}
               disabled={taken}
               className={`aspect-square w-full rounded-lg transition-transform ${
-                value.toLowerCase() === color.toLowerCase() ? 'ring-2 ring-offset-2 ring-slate-400' : ''
+                (value ?? '').toLowerCase() === color.toLowerCase() ? 'ring-2 ring-offset-2 ring-slate-400' : ''
               } ${taken ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`}
               style={{ background: color }}
             />
@@ -54,7 +54,7 @@ export function ColorPicker({ value, onChange, palette, disabledColors = [] }: C
       <div className="mt-3 flex items-center gap-2">
         <input
           type="color"
-          value={value}
+          value={value ?? ''}
           onChange={(e) => onChange(e.target.value)}
           title="Выбрать на цветовом круге"
           className="w-8 h-8 shrink-0 rounded-lg border border-slate-200 bg-transparent p-0 cursor-pointer"

@@ -50,7 +50,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { theme, setTheme, statusColors, setStatusColor, customTheme, setCustomColor, setPreview } = useSettingsStore()
   const [draftTheme, setDraftTheme] = useState<Theme>(theme)
   const [draftColors, setDraftColors] = useState({ ...statusColors })
-  const [draftCustomTheme, setDraftCustomTheme] = useState<CustomTheme>({ ...customTheme })
+  const [draftCustomTheme, setDraftCustomTheme] = useState<CustomTheme>({ ...customTheme, radar: customTheme.radar || '#6366f1' })
   const [openPicker, setOpenPicker] = useState<StatusKey | null>(null)
   const [modalPos, setModalPos] = useState<{ x: number; y: number } | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -65,7 +65,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     if (isOpen) {
       setDraftTheme(theme)
       setDraftColors({ ...statusColors })
-      setDraftCustomTheme({ ...customTheme })
+      setDraftCustomTheme({ ...customTheme, radar: customTheme.radar || '#6366f1' })
       setOpenPicker(null)
     }
   }, [isOpen, theme, statusColors, customTheme])
