@@ -9,7 +9,7 @@ interface GenreRadarChartProps {
 
 const CX = 100
 const CY = 100
-const R = 75
+const R = 85
 const ANGLE_STEP = (2 * Math.PI) / GENRES.length
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -48,7 +48,6 @@ export function GenreRadarChart({ books }: GenreRadarChartProps) {
     return `${x},${y}`
   }).join(' ')
 
-  // Points of genres that actually have data, in order around the circle.
   const filledPoints = GENRES.map((g, i) => {
     const radius = maxCount > 0 ? (counts[g] / maxCount) * R : 0
     const { x, y } = pointFor(i, radius)
@@ -61,20 +60,12 @@ export function GenreRadarChart({ books }: GenreRadarChartProps) {
 
   return (
     <div className="genre-radar-container flex flex-col items-center">
-      <svg width={200} height={200} viewBox="0 0 200 200">
+      <svg width={300} height={300} viewBox="-50 -50 300 300">
         <circle cx={CX} cy={CY} r={R} fill="var(--card-bg)" stroke="#e2e8f0" strokeWidth="3" />
         {GENRES.map((_, i) => {
           const { x, y } = pointFor(i, R)
           return (
-            <line
-              key={i}
-              x1={CX}
-              y1={CY}
-              x2={x}
-              y2={y}
-              stroke="#eef0f4"
-              strokeWidth="1"
-            />
+            <line key={i} x1={CX} y1={CY} x2={x} y2={y} stroke="#eef0f4" strokeWidth="1" />
           )
         })}
         {maxCount > 0 && (
@@ -89,27 +80,29 @@ export function GenreRadarChart({ books }: GenreRadarChartProps) {
         {maxCount > 0 && filledPolygon && (
           <polygon
             points={filledPolygon}
-            fill={hexToRgba(radarColor, 0.4)}
+            fill={hexToRgba(radarColor, 0.45)}
             stroke={radarColor}
             strokeWidth="2"
             strokeLinejoin="round"
           />
         )}
         {GENRES.map((g, i) => {
-          if (counts[g] === 0) return null
-          const { x, y } = pointFor(i, R + 10)
+          const { x, y } = pointFor(i, R + 14)
+          const parts = g.split(' ')
+          const two = parts.length > 1
+          const line1 = two ? parts.slice(0, -1).join(' ') : g
+          const line2 = two ? parts[parts.length - 1] : null
+          const anchor = labelAnchor(x)
           return (
-            <text
-              key={g}
-              x={x}
-              y={y}
-              fontSize="9"
-              fontWeight="600"
-              fill="#475569"
-              textAnchor={labelAnchor(x)}
-              dominantBaseline="middle"
-            >
-              {g}
+            <text key={g} x={x} y={y} fontSize="9" fontWeight="600" fill="var(--text)" textAnchor={anchor} dominantBaseline="middle">
+              {two ? (
+                <>
+                  <tspan x={x} dy="-6">{line1}</tspan>
+                  <tspan x={x} dy="12">{line2}</tspan>
+                </>
+              ) : (
+                <tspan x={x}>{g}</tspan>
+              )}
             </text>
           )
         })}
@@ -118,4 +111,3 @@ export function GenreRadarChart({ books }: GenreRadarChartProps) {
     </div>
   )
 }
-
