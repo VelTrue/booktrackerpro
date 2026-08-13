@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import type { Book } from '../types'
+import type { Genre } from '../constants/genres'
+import { GENRES } from '../constants/genres'
 import { ImageCropper } from './ImageCropper'
+import { searchBookMetadata, BookSearchError, type BookCandidate } from '../services/googleBooksApi'
+import { mapCategoriesToGenres } from '../utils/genreMapping'
 
 interface BookFormProps {
   isOpen: boolean
@@ -28,6 +32,13 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
   const [isCropperOpen, setIsCropperOpen] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
+  const [genre1, setGenre1] = useState<Genre | ''>('')
+  const [genre2, setGenre2] = useState<Genre | ''>('')
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [candidates, setCandidates] = useState<BookCandidate[]>([])
+  const searchAbortRef = useRef<AbortController | null>(null)
+
   const [titleError, setTitleError] = useState('')
   const [authorError, setAuthorError] = useState('')
 
@@ -42,6 +53,8 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
         setRating(initialData.rating)
         setComment(initialData.comment)
         setCover(initialData.cover || '')
+        setGenre1(initialData.genres?.[0] || '')
+        setGenre2(initialData.genres?.[1] || '')
       } else {
         setTitle('')
         setAuthor('')
@@ -49,14 +62,23 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
         setRating(0)
         setComment('')
         setCover('')
+        setGenre1('')
+        setGenre2('')
       }
       setTitleError('')
       setAuthorError('')
       setCoverError('')
       setCoverSrc('')
       setIsCropperOpen(false)
+      setSearchError('')
+      setCandidates([])
+      setIsSearchingOnline(false)
     }
   }, [isOpen, initialData])
+
+  useEffect(() => {
+    return () => searchAbortRef.current?.abort()
+  }, [])
 
   function handleCoverSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -91,6 +113,45 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
     setCover('')
   }
 
+  async function handleFindOnline() {
+    if (!title.trim()) {
+      setTitleError('Введите название книги')
+      return
+    }
+
+    searchAbortRef.current?.abort()
+    const controller = new AbortController()
+    searchAbortRef.current = controller
+
+    setIsSearchingOnline(true)
+    setSearchError('')
+    setCandidates([])
+
+    try {
+      const results = await searchBookMetadata(title, author, controller.signal)
+      if (results.length === 0) {
+        setSearchError('Совпадений не найдено')
+      } else {
+        setCandidates(results)
+      }
+    } catch (err) {
+      setSearchError(err instanceof BookSearchError ? err.message : 'Не удалось выполнить поиск')
+    } finally {
+      setIsSearchingOnline(false)
+    }
+  }
+
+  function handlePickCandidate(candidate: BookCandidate) {
+    if (candidate.coverUrl) {
+      setCover(candidate.coverUrl)
+      setCoverError('')
+    }
+    const mapped = mapCategoriesToGenres(candidate.rawCategories)
+    setGenre1(mapped[0] || '')
+    setGenre2(mapped[1] || '')
+    setCandidates([])
+  }
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
 
@@ -122,6 +183,9 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
       rating,
       comment: comment.trim(),
       cover: cover || undefined,
+      genres: ([genre1, genre2].filter(Boolean) as Genre[]).length > 0
+        ? ([genre1, genre2].filter(Boolean) as Genre[])
+        : undefined,
     })
   }
 
@@ -167,6 +231,41 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
               placeholder="Например, Джордж Оруэлл"
             />
             {authorError && <p className="text-xs text-slate-400 mt-1">{authorError}</p>}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={handleFindOnline}
+              disabled={isSearchingOnline || !title.trim()}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSearchingOnline ? 'Поиск...' : 'Найти в интернете'}
+            </button>
+            {searchError && <p className="text-xs text-rose-500 mt-1">{searchError}</p>}
+
+            {candidates.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {candidates.map((c) => (
+                  <button
+                    type="button"
+                    key={c.id}
+                    onClick={() => handlePickCandidate(c)}
+                    className="border border-slate-200 rounded-xl p-2 text-left hover:border-slate-400 transition-colors"
+                  >
+                    {c.coverUrl ? (
+                      <img src={c.coverUrl} alt={c.title} className="w-full h-24 object-cover rounded-lg mb-1" />
+                    ) : (
+                      <div className="w-full h-24 bg-slate-100 rounded-lg mb-1 flex items-center justify-center text-slate-300 text-[10px] text-center px-1">
+                        Нет обложки
+                      </div>
+                    )}
+                    <p className="text-[11px] font-medium text-slate-700 truncate">{c.title}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{c.authors.join(', ') || '—'}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -260,6 +359,34 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
               </button>
             )}
             {coverError && <p className="text-xs text-rose-500 mt-1">{coverError}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Жанр <span className="text-slate-400 font-normal">(необязательно, до 2)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={genre1}
+                onChange={(e) => setGenre1(e.target.value as Genre | '')}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm cursor-pointer transition-all hover:border-slate-300"
+              >
+                <option value="">—</option>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+              <select
+                value={genre2}
+                onChange={(e) => setGenre2(e.target.value as Genre | '')}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm cursor-pointer transition-all hover:border-slate-300"
+              >
+                <option value="">—</option>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-3 mt-6">

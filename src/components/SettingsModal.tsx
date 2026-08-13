@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSettingsStore, type CustomTheme, type CustomThemeKey, type StatusKey, type Theme } from '../store/settingsStore'
 import { ColorPicker } from './ColorPicker'
 
@@ -18,6 +18,7 @@ const customThemeFields: { key: CustomThemeKey; label: string }[] = [
   { key: 'background', label: 'Фон' },
   { key: 'buttons', label: 'Кнопки' },
   { key: 'text', label: 'Текст и цифры' },
+  { key: 'radar', label: 'Радар жанров' },
 ]
 
 // Современная палитра: нейтральные оттенки + насыщенные акцентные цвета,
@@ -51,6 +52,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [draftColors, setDraftColors] = useState({ ...statusColors })
   const [draftCustomTheme, setDraftCustomTheme] = useState<CustomTheme>({ ...customTheme })
   const [openPicker, setOpenPicker] = useState<StatusKey | null>(null)
+  const [modalPos, setModalPos] = useState<{ x: number; y: number } | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
+  )
+  const dragOffset = useRef({ dx: 0, dy: 0 })
+  const modalRef = useRef<HTMLDivElement>(null)
 
   // Синхронизируем черновик со стором каждый раз при открытии
   useEffect(() => {
@@ -69,7 +77,52 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setPreview({ theme: draftTheme, statusColors: draftColors, customTheme: draftCustomTheme })
   }, [isOpen, draftTheme, draftColors, draftCustomTheme, setPreview])
 
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Reset position each time the modal opens (centered first)
+  useEffect(() => {
+    if (isOpen) setModalPos(null)
+  }, [isOpen])
+
   if (!isOpen) return null
+
+  function clampX(nextX: number): number {
+    const w = modalRef.current?.offsetWidth ?? 0
+    const margin = 8
+    const maxX = Math.max(margin, window.innerWidth - w - margin)
+    return Math.min(Math.max(margin, nextX), maxX)
+  }
+
+  function clampY(nextY: number): number {
+    const h = modalRef.current?.offsetHeight ?? 0
+    const margin = 8
+    const maxY = Math.max(margin, window.innerHeight - h - margin)
+    return Math.min(Math.max(margin, nextY), maxY)
+  }
+
+  function handleModalPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0) return
+    const rect = modalRef.current?.getBoundingClientRect()
+    if (!rect) return
+    dragOffset.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top }
+    setDragging(true)
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  function handleModalPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragging) return
+    const nextX = e.clientX - dragOffset.current.dx
+    const nextY = e.clientY - dragOffset.current.dy
+    setModalPos({ x: clampX(nextX), y: clampY(nextY) })
+  }
+
+  function handleModalPointerUp() {
+    setDragging(false)
+  }
 
   function togglePicker(key: StatusKey) {
     setOpenPicker((prev) => (prev === key ? null : key))
@@ -104,6 +157,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setCustomColor('background', draftCustomTheme.background)
     setCustomColor('buttons', draftCustomTheme.buttons)
     setCustomColor('text', draftCustomTheme.text)
+    setCustomColor('radar', draftCustomTheme.radar)
     setPreview(null)
     onClose()
   }
@@ -115,19 +169,37 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className={`fixed inset-0 z-50 ${isDesktop ? '' : 'flex items-center justify-center p-4'}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleCancel()
       }}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-2xl modal-enter"
+        ref={modalRef}
         onClick={(e) => e.stopPropagation()}
+        className={`flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-2xl modal-enter ${dragging ? 'cursor-grabbing' : ''} ${isDesktop ? 'fixed' : ''}`}
+        style={
+          isDesktop
+            ? {
+                left: modalPos ? modalPos.x : '50%',
+                top: modalPos ? modalPos.y : '50%',
+                transform: modalPos ? undefined : 'translate(-50%, -50%)',
+                touchAction: 'none',
+              }
+            : undefined
+        }
       >
-        <div className="flex items-center justify-between px-6 pt-6 pb-5 shrink-0">
+        <div
+          onPointerDown={isDesktop ? handleModalPointerDown : undefined}
+          onPointerMove={isDesktop ? handleModalPointerMove : undefined}
+          onPointerUp={isDesktop ? handleModalPointerUp : undefined}
+          className="flex items-center justify-between px-6 pt-6 pb-5 shrink-0 cursor-grab select-none"
+          title="Перетащите окно"
+        >
           <h2 className="text-xl font-bold text-slate-900">Настройки</h2>
           <button
             type="button"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={handleCancel}
             className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
           >
@@ -240,6 +312,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Radar chart color */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Цвет радара жанров</h3>
+            <div className="rounded-xl border border-slate-200 p-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span
+                  className="w-4 h-4 rounded-full border border-slate-200"
+                  style={{ background: draftCustomTheme.radar }}
+                />
+                <span className="text-sm text-slate-700">Многоугольник жанров</span>
+              </div>
+              <ColorPicker
+                value={draftCustomTheme.radar}
+                onChange={(color) => updateDraftCustomColor('radar', color)}
+                palette={palette}
+              />
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import type { Book } from '../types'
 import { useEffectiveStatusColors } from '../store/settingsStore'
+import { GenreRadarChart } from './GenreRadarChart'
 
 interface PieChartProps {
   books: Book[]
@@ -99,6 +100,7 @@ export function PieChart({ books }: PieChartProps) {
             <p className="text-sm text-slate-400">Нет данных</p>
           )}
         </div>
+        <GenreRadarChart books={books} />
       </div>
     </div>
   )

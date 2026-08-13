@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import type { Book } from '../types'
+import { GENRES, type Genre } from '../constants/genres'
 import { BookCard } from './BookCard'
 
 interface BookBrowserProps {
@@ -13,6 +14,7 @@ type StatusFilter = 'all' | Book['status']
 type DateSort = 'newest' | 'oldest'
 type TitleSort = 'asc' | 'desc'
 type RatingFilter = number
+type GenreFilter = 'all' | 'none' | Genre
 
 const PER_PAGE = 10
 const WINDOW = 10
@@ -37,6 +39,7 @@ const ratingOptions: { value: RatingFilter; label: string }[] = [
 export function BookBrowser({ books, onClose, onDelete, onEdit }: BookBrowserProps) {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('all')
+  const [genreFilter, setGenreFilter] = useState<GenreFilter>('all')
   const [dateSort, setDateSort] = useState<DateSort>('newest')
   const [titleSort, setTitleSort] = useState<TitleSort>('asc')
   const [rating, setRating] = useState<RatingFilter>(0)
@@ -60,6 +63,12 @@ export function BookBrowser({ books, onClose, onDelete, onEdit }: BookBrowserPro
       result = result.filter((b) => b.status === status)
     }
 
+    if (genreFilter === 'none') {
+      result = result.filter((b) => !b.genres || b.genres.length === 0)
+    } else if (genreFilter !== 'all') {
+      result = result.filter((b) => b.genres?.includes(genreFilter))
+    }
+
     if (rating > 0) {
       result = result.filter((b) => b.rating === rating)
     }
@@ -76,7 +85,7 @@ export function BookBrowser({ books, onClose, onDelete, onEdit }: BookBrowserPro
     })
 
     return result
-  }, [books, search, status, rating, dateSort, titleSort])
+  }, [books, search, status, genreFilter, rating, dateSort, titleSort])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const safePage = Math.min(Math.max(1, page), totalPages)
@@ -143,25 +152,47 @@ export function BookBrowser({ books, onClose, onDelete, onEdit }: BookBrowserPro
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 gap-3 px-5 pt-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-              Статус
-            </label>
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as StatusFilter)
-                setPage(1)
-              }}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
-            >
-              {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3 px-5 pt-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Статус
+              </label>
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as StatusFilter)
+                  setPage(1)
+                }}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+              >
+                {statusOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Жанр
+              </label>
+              <select
+                value={genreFilter}
+                onChange={(e) => {
+                  setGenreFilter(e.target.value as GenreFilter)
+                  setPage(1)
+                }}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200 cursor-pointer"
+              >
+                <option value="all">Все жанры</option>
+                {GENRES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+                <option value="none">Без жанра</option>
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">

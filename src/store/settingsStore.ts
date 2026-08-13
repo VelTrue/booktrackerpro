@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 
 export type Theme = 'light' | 'dark' | 'custom'
 export type StatusKey = 'completed' | 'reading' | 'planned' | 'abandoned'
-export type CustomThemeKey = 'background' | 'buttons' | 'text'
+export type CustomThemeKey = 'background' | 'buttons' | 'text' | 'radar'
 export type CustomTheme = Record<CustomThemeKey, string>
 
 export interface SettingsPreview {
@@ -36,6 +36,7 @@ const defaultCustomTheme: CustomTheme = {
   background: '#f8fafc',
   buttons: '#6366f1',
   text: '#0f172a',
+  radar: '#6366f1',
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -80,3 +81,4 @@ export function useEffectiveStatusColors(): Record<StatusKey, string> {
 export function useEffectiveCustomTheme(): CustomTheme {
   return useSettingsStore((s) => s.preview?.customTheme ?? s.customTheme)
 }
+

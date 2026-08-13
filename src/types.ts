@@ -1,14 +1,17 @@
+import type { Genre } from './constants/genres'
+
 export interface Book {
   id: string
   title: string
   author: string
-  isbn?: string               
-  totalPages?: number         
-  currentPage?: number        
+  isbn?: string
+  totalPages?: number
+  currentPage?: number
   status: 'completed' | 'reading' | 'planned' | 'abandoned'
-  rating: number              
+  rating: number
   comment: string
   cover?: string
+  genres?: Genre[]
   createdAt: Date
   updatedAt: Date
 }
