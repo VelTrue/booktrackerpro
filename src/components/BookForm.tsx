@@ -384,7 +384,7 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm cursor-pointer transition-all hover:border-slate-300"
               >
                 <option value="">—</option>
-                {GENRES.map((g) => (
+                {GENRES.filter((g) => g !== genre2).map((g) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
@@ -394,7 +394,7 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm cursor-pointer transition-all hover:border-slate-300"
               >
                 <option value="">—</option>
-                {GENRES.map((g) => (
+                {GENRES.filter((g) => g !== genre1).map((g) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>

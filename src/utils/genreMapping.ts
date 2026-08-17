@@ -11,7 +11,7 @@ const KEYWORD_RULES: [RegExp, Genre][] = [
   [/thriller|suspense|триллер/i, 'Триллер'],
   [/poetry|поэзия/i, 'Поэзия'],
   [/satire|humor|humour|сатира/i, 'Сатира'],
-  [/adventure|приключения/i, 'Приключения'],
+  [/adventure|приключения/i, 'Прикл-ния'],
   [/biography|autobiography|memoir|автофикшен/i, 'Автофикшен'],
   [/short stories|рассказ/i, 'Рассказ'],
   [/novella|повесть/i, 'Повесть'],
