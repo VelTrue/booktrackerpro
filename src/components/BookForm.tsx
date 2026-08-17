@@ -36,9 +36,11 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
   const [genre1, setGenre1] = useState<Genre | ''>('')
   const [genre2, setGenre2] = useState<Genre | ''>('')
   const [isSearchingOnline, setIsSearchingOnline] = useState(false)
+  const [isSearchCoolingDown, setIsSearchCoolingDown] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [candidates, setCandidates] = useState<BookCandidate[]>([])
   const searchAbortRef = useRef<AbortController | null>(null)
+  const searchCooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [titleError, setTitleError] = useState('')
   const [authorError, setAuthorError] = useState('')
@@ -78,7 +80,10 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
   }, [isOpen, initialData])
 
   useEffect(() => {
-    return () => searchAbortRef.current?.abort()
+    return () => {
+      searchAbortRef.current?.abort()
+      if (searchCooldownTimerRef.current) clearTimeout(searchCooldownTimerRef.current)
+    }
   }, [])
 
   useBodyScrollLock(isOpen)
@@ -141,6 +146,10 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
       setSearchError(err instanceof BookSearchError ? err.message : 'Не удалось выполнить поиск')
     } finally {
       setIsSearchingOnline(false)
+      // Короткая пауза перед повторным нажатием — чтобы пользователь не
+      // засыпал API повторными кликами и не усугублял 429.
+      setIsSearchCoolingDown(true)
+      searchCooldownTimerRef.current = setTimeout(() => setIsSearchCoolingDown(false), 2000)
     }
   }
 
@@ -240,7 +249,7 @@ export function BookForm({ isOpen, onClose, onSave, initialData }: BookFormProps
             <button
               type="button"
               onClick={handleFindOnline}
-              disabled={isSearchingOnline || !title.trim()}
+              disabled={isSearchingOnline || isSearchCoolingDown || !title.trim()}
               className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSearchingOnline ? 'Поиск...' : 'Найти в интернете'}

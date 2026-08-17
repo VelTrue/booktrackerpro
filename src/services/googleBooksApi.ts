@@ -13,6 +13,20 @@ const MAX_CANDIDATES = 3
 const TIMEOUT_MS = 8000
 const CACHE_KEY = 'bookTracker_googleBooksCache'
 const CACHE_LIMIT = 300
+const RETRY_DELAYS_MS = [1000, 2000]
+const MIN_REQUEST_INTERVAL_MS = 600
+
+let lastRequestAt = 0
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer)
+      reject(new DOMException('Aborted', 'AbortError'))
+    })
+  })
+}
 
 function upgradeToHttps(url: string): string {
   return url.replace(/^http:\/\//, 'https://')
@@ -95,16 +109,35 @@ export async function searchBookMetadata(
   const url = `${ENDPOINT}?${params.toString()}`
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   externalSignal?.addEventListener('abort', () => controller.abort())
 
+  // Не даём двум запросам уйти впритык друг к другу — это само по себе
+  // провоцирует 429 при быстрых повторных поисках.
+  const sinceLastRequest = Date.now() - lastRequestAt
+  if (sinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
+    await sleep(MIN_REQUEST_INTERVAL_MS - sinceLastRequest, controller.signal)
+  }
+
   let res: Response
-  try {
-    res = await fetch(url, { signal: controller.signal })
-  } catch {
-    throw new BookSearchError('Не удалось выполнить поиск. Проверьте соединение')
-  } finally {
-    clearTimeout(timer)
+  let attempt = 0
+  for (;;) {
+    lastRequestAt = Date.now()
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+    try {
+      res = await fetch(url, { signal: controller.signal })
+    } catch {
+      throw new BookSearchError('Не удалось выполнить поиск. Проверьте соединение')
+    } finally {
+      clearTimeout(timer)
+    }
+
+    const isRetryable = res.status === 429 || res.status >= 500
+    if (isRetryable && attempt < RETRY_DELAYS_MS.length) {
+      await sleep(RETRY_DELAYS_MS[attempt], controller.signal)
+      attempt++
+      continue
+    }
+    break
   }
 
   if (res.status === 429) {
@@ -114,6 +147,9 @@ export async function searchBookMetadata(
     throw new BookSearchError('Слишком много запросов. Попробуйте позже')
   }
   if (!res.ok) {
+    if (cached?.length) {
+      return cached
+    }
     throw new BookSearchError('Сервис книг временно недоступен')
   }
 
